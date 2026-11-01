@@ -1,0 +1,4 @@
+@tailwind base; @tailwind components; @tailwind utilities;
+body { @apply font-sans text-plum min-h-screen; background: linear-gradient(135deg,#fff8f0,#fbd5e0 55%,#d9c8f2); background-attachment: fixed; }
+.btn { @apply rounded-full px-6 py-2.5 font-semibold transition hover:scale-105 active:scale-95; }
+.card { @apply rounded-3xl bg-white/80 backdrop-blur shadow-soft; }
