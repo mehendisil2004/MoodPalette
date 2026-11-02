@@ -3,9 +3,21 @@ import { Chart as C, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip
 import { Doughnut, Bar } from 'react-chartjs-2'
 C.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 
-const api = (p, method = 'GET', body) =>
-  fetch('/api' + p, { method, headers: { 'Content-Type': 'application/json' }, body: body && JSON.stringify(body) })
-    .then(r => (r.status === 204 ? null : r.json()))
+const API_BASE = "https://moodpalette-il8f.onrender.com";
+
+const api = (p, method = "GET", body) =>
+  fetch(`${API_BASE}/api${p}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+    return response.status === 204 ? null : response.json();
+  });
 
 const Q = [
   ['introversion', 'Your ideal Saturday?', [['🛋️', 'Cosy night in, just me', .9], ['☕', 'Brunch with a few friends', .5], ['🎉', 'A big, buzzy party', .1]]],
@@ -24,9 +36,32 @@ export default function App() {
   const say = m => { setToast(m); setTimeout(() => setToast(''), 1500) }
   const copy = h => { navigator.clipboard?.writeText(h); say(`Copied ${h} 💗`) }
 
-  const generate = async mood => {
-    setBusy(true); setPal(await api('/generate', 'POST', { traits: ans, mood })); setBusy(false); setView('result')
-  }
+  const generate = async (mood) => {
+    try {
+      setBusy(true);
+
+      console.log("Sending generation request:", {
+        url: `${API_BASE}/api/generate`,
+        traits: ans,
+        mood,
+      });
+
+      const result = await api("/generate", "POST", {
+        traits: ans,
+        mood,
+      });
+
+      console.log("Generated palette:", result);
+
+      setPal(result);
+      setView("result");
+    } catch (error) {
+      console.error("Palette generation failed:", error);
+      alert("Palette generation failed: " + error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
   const swap = async i => {
     const r = await api('/replace', 'POST', { hexes: pal.colors.map(c => c.hex), index: i, traits: pal.traits, mood: pal.mood })
     const colors = pal.colors.map((c, k) => (k === i ? { ...c, ...r, role: c.role } : c))
